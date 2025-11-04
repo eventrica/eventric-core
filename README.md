@@ -1,2 +1,0 @@
-# eventric-core
-Core Libraries
