@@ -8,7 +8,10 @@
 pub mod string;
 pub mod vec;
 
-use std::fmt::Display;
+use std::{
+    error,
+    fmt::Display,
+};
 
 use thiserror::Error;
 
@@ -29,23 +32,28 @@ pub trait Validator<T> {
 /// in a valid state.
 pub trait Validate
 where
+    Self::Err: error::Error + From<Error>,
     Self: Sized,
 {
+    /// The error type to return from validation, which must be convertible from
+    /// the standard validation [`Error`] type.
+    type Err;
+
     /// Validate self, and return self if valid, or an error if not.
     ///
     /// # Errors
     ///
     /// Returns an error on validation fails, which should be the
     /// [`Error::Validation`] variant of the core error type.
-    fn validate(self) -> Result<Self, Error>;
+    fn validate(self) -> Result<Self, Self::Err>;
 }
 
 // -------------------------------------------------------------------------------------------------
 
 // Errors
 
-/// The [`Error`] enum provides possible error cases when validation fails.
-#[derive(Debug, Error)]
+/// The [`Error`] enumeration gives possible error cases when validation fails.
+#[derive(Debug, Error, Eq, PartialEq)]
 pub enum Error {
     /// The validation request failed with the supplied error message.
     #[error("Validation Error: {0}")]
