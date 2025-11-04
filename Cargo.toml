@@ -1,0 +1,59 @@
+[profile.bench]
+debug = true
+
+[profile.release]
+debug = true
+
+[workspace]
+members  = ["crates/*"]
+resolver = "2"
+
+[workspace.dependencies]
+any-range             = { version = "0.1" }
+assertables           = { version = "9" }
+bytes                 = { version = "1" }
+criterion             = { version = "0.7" }
+dashmap               = { version = "6", features = ["inline"] }
+derive_more           = { version = "2", features = ["full"] }
+double-ended-peekable = { version = "0.1.0" }
+eventric-stream       = { path = "crates/eventric-stream" }
+fancy_constructor     = { version = "2" }
+fjall                 = { version = "=3.0.0-pre.4" }
+include-utils         = { version = "0.2" }
+rand                  = { version = "0.9" }
+rapidhash             = { version = "4" }
+self_cell             = { version = "1" }
+thiserror             = { version = "2" }
+
+[workspace.lints.clippy]
+cargo       = "warn"
+complexity  = "warn"
+correctness = "deny"
+pedantic    = "warn"
+perf        = "warn"
+restriction = "allow"
+style       = "warn"
+suspicious  = "warn"
+
+[workspace.lints.rust]
+deprecated_safe         = "warn"
+future_incompatible     = "warn"
+keyword_idents          = "warn"
+let_underscore          = "warn"
+nonstandard_style       = "warn"
+refining_impl_trait     = "warn"
+rust_2018_compatibility = "warn"
+rust_2018_idioms        = "warn"
+rust_2021_compatibility = "warn"
+rust_2024_compatibility = "warn"
+unused                  = "warn"
+
+[workspace.package]
+authors    = ["Andrew Cherry (@kolektiv)"]
+categories = ["data-structures"]
+edition    = "2024"
+keywords   = ["event", "sourcing", "streaming"]
+license    = "AGPL-3.0-only"
+readme     = "README.md"
+repository = "https://github.com/eventrica/eventric-stream"
+version    = "0.1.0"
