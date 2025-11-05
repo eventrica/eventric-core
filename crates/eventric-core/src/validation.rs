@@ -124,9 +124,7 @@ mod tests {
         let value = String::from("test");
         let validators: &[&dyn Validator<String>] = &[];
 
-        let result = validate(&value, "field", validators);
-
-        assert_ok!(result);
+        assert_ok!(validate(&value, "field", validators));
     }
 
     #[test]
@@ -134,20 +132,20 @@ mod tests {
         let value = String::from("test");
         let validators: &[&dyn Validator<String>] = &[&StringIsEmpty];
 
-        let result = validate(&value, "field", validators);
-
-        assert_ok!(result);
+        assert_ok!(validate(&value, "field", validators));
     }
 
     #[test]
+    #[rustfmt::skip]
     fn success_with_multiple_validators() {
         let value = String::from("test");
-        let validators: &[&dyn Validator<String>] =
-            &[&StringIsEmpty, &ControlCharacters, &PrecedingWhitespace];
+        let validators: &[&dyn Validator<String>] = &[
+            &StringIsEmpty,
+            &ControlCharacters,
+            &PrecedingWhitespace
+        ];
 
-        let result = validate(&value, "field", validators);
-
-        assert_ok!(result);
+        assert_ok!(validate(&value, "field", validators));
     }
 
     #[test]
@@ -155,9 +153,7 @@ mod tests {
         let value = vec![1, 2, 3];
         let validators: &[&dyn Validator<Vec<i32>>] = &[&VecIsEmpty];
 
-        let result = validate(&value, "items", validators);
-
-        assert_ok!(result);
+        assert_ok!(validate(&value, "items", validators));
     }
 
     // Failure Cases
@@ -167,9 +163,10 @@ mod tests {
         let value = String::new();
         let validators: &[&dyn Validator<String>] = &[&StringIsEmpty];
 
-        let result = validate(&value, "username", validators);
-
-        assert_eq!(result.unwrap_err(), Error::invalid("username: empty"));
+        assert_eq!(
+            Error::invalid("username: empty"),
+            validate(&value, "username", validators).unwrap_err(),
+        );
     }
 
     #[test]
@@ -177,11 +174,9 @@ mod tests {
         let value = String::from(" test");
         let validators: &[&dyn Validator<String>] = &[&PrecedingWhitespace, &StringIsEmpty];
 
-        let result = validate(&value, "name", validators);
-
         assert_eq!(
-            result.unwrap_err(),
-            Error::invalid("name: preceding whitespace")
+            Error::invalid("name: preceding whitespace"),
+            validate(&value, "name", validators).unwrap_err(),
         );
     }
 
@@ -190,11 +185,9 @@ mod tests {
         let value = String::from("test\n");
         let validators: &[&dyn Validator<String>] = &[&StringIsEmpty, &ControlCharacters];
 
-        let result = validate(&value, "description", validators);
-
         assert_eq!(
-            result.unwrap_err(),
-            Error::invalid("description: control characters")
+            Error::invalid("description: control characters"),
+            validate(&value, "description", validators).unwrap_err(),
         );
     }
 
@@ -203,9 +196,10 @@ mod tests {
         let value: Vec<i32> = Vec::new();
         let validators: &[&dyn Validator<Vec<i32>>] = &[&VecIsEmpty];
 
-        let result = validate(&value, "tags", validators);
-
-        assert_eq!(result.unwrap_err(), Error::invalid("tags: empty"));
+        assert_eq!(
+            Error::invalid("tags: empty"),
+            validate(&value, "tags", validators).unwrap_err(),
+        );
     }
 
     // Error Message Formatting
@@ -215,20 +209,21 @@ mod tests {
         let value = String::new();
         let validators: &[&dyn Validator<String>] = &[&StringIsEmpty];
 
-        let result = validate(&value, "email", validators);
-
-        assert_eq!(result.unwrap_err(), Error::invalid("email: empty"));
+        assert_eq!(
+            Error::invalid("email: empty"),
+            validate(&value, "email", validators).unwrap_err(),
+        );
     }
 
     #[test]
     fn error_message_format_with_string_name() {
         let value = String::new();
         let validators: &[&dyn Validator<String>] = &[&StringIsEmpty];
-        let name = String::from("user_email");
 
-        let result = validate(&value, name, validators);
-
-        assert_eq!(result.unwrap_err(), Error::invalid("user_email: empty"));
+        assert_eq!(
+            Error::invalid("user_email: empty"),
+            validate(&value, "user_email", validators).unwrap_err(),
+        );
     }
 
     #[test]
@@ -236,11 +231,9 @@ mod tests {
         let value = String::new();
         let validators: &[&dyn Validator<String>] = &[&StringIsEmpty];
 
-        let result = validate(&value, "user.profile.name", validators);
-
         assert_eq!(
-            result.unwrap_err(),
-            Error::invalid("user.profile.name: empty")
+            Error::invalid("user.profile.name: empty"),
+            validate(&value, "user.profile.name", validators).unwrap_err(),
         );
     }
 
@@ -248,38 +241,28 @@ mod tests {
 
     #[test]
     fn short_circuits_on_first_failure() {
-        // This test validates that only the first error is returned
-        // when multiple validators would fail
-        let value = String::from("\n"); // Has control char, is not empty, but is whitespace
-        let validators: &[&dyn Validator<String>] = &[
-            &ControlCharacters, // This will fail first
-            &StringIsEmpty,     // This would pass
-        ];
+        let value = String::from("\n");
+        let validators: &[&dyn Validator<String>] = &[&ControlCharacters, &StringIsEmpty];
 
-        let result = validate(&value, "field", validators);
-
-        // Should get error from first validator only
         assert_eq!(
-            result.unwrap_err(),
-            Error::invalid("field: control characters")
+            Error::invalid("field: control characters"),
+            validate(&value, "field", validators).unwrap_err(),
         );
     }
 
     #[test]
-    fn stops_at_first_error_with_many_validators() {
-        let value = String::from(" test\n"); // Has both preceding whitespace AND control chars
+    #[rustfmt::skip]
+    fn short_circuits_on_first_failure_with_multiple_potential_failures() {
+        let value = String::from(" test\n");
         let validators: &[&dyn Validator<String>] = &[
-            &PrecedingWhitespace, // This will fail first
-            &ControlCharacters,   // This would also fail but shouldn't be checked
+            &PrecedingWhitespace,
+            &ControlCharacters,
             &StringIsEmpty,
         ];
 
-        let result = validate(&value, "input", validators);
-
-        // Should only get the first error
         assert_eq!(
-            result.unwrap_err(),
-            Error::invalid("input: preceding whitespace")
+            Error::invalid("input: preceding whitespace"),
+            validate(&value, "input", validators).unwrap_err(),
         );
     }
 }
