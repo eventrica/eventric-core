@@ -1,6 +1,9 @@
 [dependencies]
 thiserror.workspace = true
 
+[dev-dependencies]
+assertables.workspace = true
+
 [lints]
 workspace = true
 

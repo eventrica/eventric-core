@@ -51,3 +51,198 @@ impl Validator<String> for TrailingWhitespace {
             .then_some("trailing whitespace")
     }
 }
+
+// -------------------------------------------------------------------------------------------------
+
+// Tests
+
+#[cfg(test)]
+mod tests {
+    use assertables::assert_none;
+
+    use crate::validation::{
+        Validator as _,
+        string::{
+            ControlCharacters,
+            IsEmpty,
+            PrecedingWhitespace,
+            TrailingWhitespace,
+        },
+    };
+
+    // Control Characters
+
+    #[test]
+    fn control_characters_valid() {
+        let validator = ControlCharacters;
+        let value = String::from("Hello World");
+
+        assert_none!(validator.validate(&value));
+    }
+
+    #[test]
+    fn control_characters_with_newline() {
+        let validator = ControlCharacters;
+        let value = String::from("Hello\nWorld");
+
+        assert_eq!(validator.validate(&value), Some("control characters"));
+    }
+
+    #[test]
+    fn control_characters_with_tab() {
+        let validator = ControlCharacters;
+        let value = String::from("Hello\tWorld");
+
+        assert_eq!(validator.validate(&value), Some("control characters"));
+    }
+
+    #[test]
+    fn control_characters_with_carriage_return() {
+        let validator = ControlCharacters;
+        let value = String::from("Hello\rWorld");
+
+        assert_eq!(validator.validate(&value), Some("control characters"));
+    }
+
+    #[test]
+    fn control_characters_with_null() {
+        let validator = ControlCharacters;
+        let value = String::from("Hello\0World");
+
+        assert_eq!(validator.validate(&value), Some("control characters"));
+    }
+
+    #[test]
+    fn control_characters_empty_string() {
+        let validator = ControlCharacters;
+        let value = String::new();
+
+        assert_none!(validator.validate(&value));
+    }
+
+    // Is Empty
+
+    #[test]
+    fn is_empty_valid() {
+        let validator = IsEmpty;
+        let value = String::from("Hello");
+
+        assert_none!(validator.validate(&value));
+    }
+
+    #[test]
+    fn is_empty_invalid() {
+        let validator = IsEmpty;
+        let value = String::new();
+
+        assert_eq!(validator.validate(&value), Some("empty"));
+    }
+
+    #[test]
+    fn is_empty_whitespace_only() {
+        let validator = IsEmpty;
+        let value = String::from("   ");
+
+        assert_none!(validator.validate(&value));
+    }
+
+    // Preceding Whitespace
+
+    #[test]
+    fn preceding_whitespace_valid() {
+        let validator = PrecedingWhitespace;
+        let value = String::from("Hello World");
+
+        assert_none!(validator.validate(&value));
+    }
+
+    #[test]
+    fn preceding_whitespace_with_space() {
+        let validator = PrecedingWhitespace;
+        let value = String::from(" Hello");
+
+        assert_eq!(validator.validate(&value), Some("preceding whitespace"));
+    }
+
+    #[test]
+    fn preceding_whitespace_with_tab() {
+        let validator = PrecedingWhitespace;
+        let value = String::from("\tHello");
+
+        assert_eq!(validator.validate(&value), Some("preceding whitespace"));
+    }
+
+    #[test]
+    fn preceding_whitespace_with_newline() {
+        let validator = PrecedingWhitespace;
+        let value = String::from("\nHello");
+
+        assert_eq!(validator.validate(&value), Some("preceding whitespace"));
+    }
+
+    #[test]
+    fn preceding_whitespace_empty_string() {
+        let validator = PrecedingWhitespace;
+        let value = String::new();
+
+        assert_none!(validator.validate(&value));
+    }
+
+    #[test]
+    fn preceding_whitespace_trailing_only() {
+        let validator = PrecedingWhitespace;
+        let value = String::from("Hello ");
+
+        assert_none!(validator.validate(&value));
+    }
+
+    // Trailing Whitespace
+
+    #[test]
+    fn trailing_whitespace_valid() {
+        let validator = TrailingWhitespace;
+        let value = String::from("Hello World");
+
+        assert_none!(validator.validate(&value));
+    }
+
+    #[test]
+    fn trailing_whitespace_with_space() {
+        let validator = TrailingWhitespace;
+        let value = String::from("Hello ");
+
+        assert_eq!(validator.validate(&value), Some("trailing whitespace"));
+    }
+
+    #[test]
+    fn trailing_whitespace_with_tab() {
+        let validator = TrailingWhitespace;
+        let value = String::from("Hello\t");
+
+        assert_eq!(validator.validate(&value), Some("trailing whitespace"));
+    }
+
+    #[test]
+    fn trailing_whitespace_with_newline() {
+        let validator = TrailingWhitespace;
+        let value = String::from("Hello\n");
+
+        assert_eq!(validator.validate(&value), Some("trailing whitespace"));
+    }
+
+    #[test]
+    fn trailing_whitespace_empty_string() {
+        let validator = TrailingWhitespace;
+        let value = String::new();
+
+        assert_none!(validator.validate(&value));
+    }
+
+    #[test]
+    fn trailing_whitespace_preceding_only() {
+        let validator = TrailingWhitespace;
+        let value = String::from(" Hello");
+
+        assert_none!(validator.validate(&value));
+    }
+}
