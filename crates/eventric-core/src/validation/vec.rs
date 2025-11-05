@@ -42,7 +42,7 @@ mod tests {
         let validator = IsEmpty;
         let value: Vec<i32> = Vec::new();
 
-        assert_eq!(validator.validate(&value), Some("empty"));
+        assert_eq!(Some("empty"), validator.validate(&value));
     }
 
     #[test]
@@ -68,6 +68,6 @@ mod tests {
 
         value.clear();
 
-        assert_eq!(validator.validate(&value), Some("empty"));
+        assert_eq!(Some("empty"), validator.validate(&value));
     }
 }
