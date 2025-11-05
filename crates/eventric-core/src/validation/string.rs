@@ -58,7 +58,10 @@ impl Validator<String> for TrailingWhitespace {
 
 #[cfg(test)]
 mod tests {
-    use assertables::assert_none;
+    use assertables::{
+        assert_none,
+        assert_some_eq,
+    };
 
     use crate::validation::{
         Validator as _,
@@ -85,7 +88,7 @@ mod tests {
         let validator = ControlCharacters;
         let value = String::from("Hello\nWorld");
 
-        assert_eq!(Some("control characters"), validator.validate(&value));
+        assert_some_eq!(Some("control characters"), validator.validate(&value));
     }
 
     #[test]
@@ -93,7 +96,7 @@ mod tests {
         let validator = ControlCharacters;
         let value = String::from("Hello\tWorld");
 
-        assert_eq!(Some("control characters"), validator.validate(&value));
+        assert_some_eq!(Some("control characters"), validator.validate(&value));
     }
 
     #[test]
@@ -101,7 +104,7 @@ mod tests {
         let validator = ControlCharacters;
         let value = String::from("Hello\rWorld");
 
-        assert_eq!(Some("control characters"), validator.validate(&value));
+        assert_some_eq!(Some("control characters"), validator.validate(&value));
     }
 
     #[test]
@@ -109,7 +112,7 @@ mod tests {
         let validator = ControlCharacters;
         let value = String::from("Hello\0World");
 
-        assert_eq!(Some("control characters"), validator.validate(&value));
+        assert_some_eq!(Some("control characters"), validator.validate(&value));
     }
 
     #[test]
@@ -135,7 +138,7 @@ mod tests {
         let validator = IsEmpty;
         let value = String::new();
 
-        assert_eq!(Some("empty"), validator.validate(&value));
+        assert_some_eq!(Some("empty"), validator.validate(&value));
     }
 
     #[test]
@@ -161,7 +164,7 @@ mod tests {
         let validator = PrecedingWhitespace;
         let value = String::from(" Hello");
 
-        assert_eq!(Some("preceding whitespace"), validator.validate(&value));
+        assert_some_eq!(Some("preceding whitespace"), validator.validate(&value));
     }
 
     #[test]
@@ -169,7 +172,7 @@ mod tests {
         let validator = PrecedingWhitespace;
         let value = String::from("\tHello");
 
-        assert_eq!(Some("preceding whitespace"), validator.validate(&value));
+        assert_some_eq!(Some("preceding whitespace"), validator.validate(&value));
     }
 
     #[test]
@@ -177,7 +180,7 @@ mod tests {
         let validator = PrecedingWhitespace;
         let value = String::from("\nHello");
 
-        assert_eq!(Some("preceding whitespace"), validator.validate(&value));
+        assert_some_eq!(Some("preceding whitespace"), validator.validate(&value));
     }
 
     #[test]
@@ -211,7 +214,7 @@ mod tests {
         let validator = TrailingWhitespace;
         let value = String::from("Hello ");
 
-        assert_eq!(Some("trailing whitespace"), validator.validate(&value));
+        assert_some_eq!(Some("trailing whitespace"), validator.validate(&value));
     }
 
     #[test]
@@ -219,7 +222,7 @@ mod tests {
         let validator = TrailingWhitespace;
         let value = String::from("Hello\t");
 
-        assert_eq!(Some("trailing whitespace"), validator.validate(&value));
+        assert_some_eq!(Some("trailing whitespace"), validator.validate(&value));
     }
 
     #[test]
@@ -227,7 +230,7 @@ mod tests {
         let validator = TrailingWhitespace;
         let value = String::from("Hello\n");
 
-        assert_eq!(Some("trailing whitespace"), validator.validate(&value));
+        assert_some_eq!(Some("trailing whitespace"), validator.validate(&value));
     }
 
     #[test]

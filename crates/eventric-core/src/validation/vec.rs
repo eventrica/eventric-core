@@ -20,7 +20,10 @@ impl<T> Validator<Vec<T>> for IsEmpty {
 
 #[cfg(test)]
 mod tests {
-    use assertables::assert_none;
+    use assertables::{
+        assert_none,
+        assert_some_eq,
+    };
 
     use crate::validation::{
         Validator as _,
@@ -42,7 +45,7 @@ mod tests {
         let validator = IsEmpty;
         let value: Vec<i32> = Vec::new();
 
-        assert_eq!(Some("empty"), validator.validate(&value));
+        assert_some_eq!(Some("empty"), validator.validate(&value));
     }
 
     #[test]
@@ -68,6 +71,6 @@ mod tests {
 
         value.clear();
 
-        assert_eq!(Some("empty"), validator.validate(&value));
+        assert_some_eq!(Some("empty"), validator.validate(&value));
     }
 }
