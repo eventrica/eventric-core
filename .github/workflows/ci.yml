@@ -16,41 +16,35 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Cache Registry
-      uses: actions/cache@v3
+    - name: Cache
+      uses: actions/cache@v4
       with:
-        path: ~/.cargo/registry/index/
-        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Cache Build
-      uses: actions/cache@v3
-      with:
-        path: target/
-        key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
-
-
-    - name: Check Format
-      run: cargo fmt --check
-
-    - name: Check Lint
-      run: cargo clippy --workspace --all-targets -- -D warnings
+    - name: Check
+      run: |
+        cargo fmt --check
+        cargo clippy --workspace --all-targets -- -D warnings
 
     - name: Build
       run: cargo build --workspace --verbose
 
     - name: Test
-      run: cargo test --workspace --tests --verbose
+      run: |
+        cargo test --workspace --tests --verbose
+        cargo test --workspace --doc --verbose
+        cargo test --workspace --examples --verbose
 
-    - name: Test Docs
-      run: cargo test --workspace --doc --verbose
-
-    - name: Test Examples
-      run: cargo test --workspace --examples --verbose
-
-    - name: Coverage
+    - name: Measure
       run: |
         cargo install --locked cargo-tarpaulin
         cargo tarpaulin --workspace --out Xml --output-dir coverage
 
-    - name: Coverage Upload
+    - name: Record
       uses: coverallsapp/github-action@v2
