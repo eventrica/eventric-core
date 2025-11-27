@@ -5,7 +5,8 @@
 //!
 //! [validation]: self
 
-pub mod hashset;
+pub mod b_tree_set;
+pub mod hash_set;
 pub mod string;
 pub mod vec;
 
