@@ -5,6 +5,7 @@
 //!
 //! [validation]: self
 
+pub mod hashset;
 pub mod string;
 pub mod vec;
 
