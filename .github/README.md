@@ -1,4 +1,4 @@
-# Eventric Core
+# Eventric Utilities
 
-This repository contains the core supporting libraries for the Eventric Framework,
-providing common utilities and types used throughout the Eventrica ecosystem.
+This repository contains the core supporting utilities for the Eventric Framework
+such as a simple structural validation system.
