@@ -10,11 +10,11 @@ workspace = true
 [package]
 authors.workspace    = true
 categories.workspace = true
-description          = "Eventric Core"
+description          = "Eventric Utilities"
 edition.workspace    = true
 keywords.workspace   = true
 license.workspace    = true
-name                 = "eventric-core"
+name                 = "eventric-utils"
 readme.workspace     = true
 repository.workspace = true
 version.workspace    = true
