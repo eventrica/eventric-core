@@ -5,11 +5,9 @@
 //!
 //! [validation]: self
 
-pub mod array;
-pub mod b_tree_set;
-pub mod hash_set;
-pub mod string;
-pub mod vec;
+mod no_control_characters;
+mod no_white_space;
+mod not_empty;
 
 use std::{
     error,
@@ -102,6 +100,20 @@ where
 
 // -------------------------------------------------------------------------------------------------
 
+// Re-Exports
+
+pub use self::{
+    no_control_characters::NoControlCharacters,
+    no_white_space::{
+        NoPrecedingWhiteSpace,
+        NoTrailingWhiteSpace,
+        NoWhiteSpace,
+    },
+    not_empty::NotEmpty,
+};
+
+// -------------------------------------------------------------------------------------------------
+
 // Tests
 
 #[cfg(test)]
@@ -111,161 +123,213 @@ mod tests {
     use crate::validation::{
         Error,
         Validator,
-        string::{
-            ControlCharacters,
-            IsEmpty as StringIsEmpty,
-            PrecedingWhitespace,
-        },
         validate,
-        vec::IsEmpty as VecIsEmpty,
     };
 
-    // Success Cases
+    // Test Validators
+
+    struct IsPositive;
+
+    impl Validator<i32> for IsPositive {
+        fn validate(&self, value: &i32) -> Option<&str> {
+            (*value <= 0).then_some("not positive")
+        }
+    }
+
+    struct IsEven;
+
+    impl Validator<i32> for IsEven {
+        fn validate(&self, value: &i32) -> Option<&str> {
+            (value % 2 != 0).then_some("not even")
+        }
+    }
+
+    struct LessThan100;
+
+    impl Validator<i32> for LessThan100 {
+        fn validate(&self, value: &i32) -> Option<&str> {
+            (*value >= 100).then_some("not less than 100")
+        }
+    }
+
+    struct MinLength(usize);
+
+    impl Validator<String> for MinLength {
+        fn validate(&self, value: &String) -> Option<&str> {
+            (value.len() < self.0).then_some("too short")
+        }
+    }
+
+    struct MaxLength(usize);
+
+    impl Validator<String> for MaxLength {
+        fn validate(&self, value: &String) -> Option<&str> {
+            (value.len() > self.0).then_some("too long")
+        }
+    }
+
+    // Error
 
     #[test]
-    fn success_with_empty_validators() {
-        let value = String::from("test");
-        let validators: &[&dyn Validator<String>] = &[];
+    fn error_invalid_with_string() {
+        let error = Error::invalid("test error");
 
-        assert_ok!(validate(&value, "field", validators));
+        assert_eq!(error, Error::Invalid(String::from("test error")));
     }
 
     #[test]
-    fn success_with_single_validator() {
-        let value = String::from("test");
-        let validators: &[&dyn Validator<String>] = &[&StringIsEmpty];
+    fn error_invalid_with_str() {
+        let error = Error::invalid("static error");
 
-        assert_ok!(validate(&value, "field", validators));
+        assert_eq!(error, Error::Invalid(String::from("static error")));
     }
 
     #[test]
-    #[rustfmt::skip]
-    fn success_with_multiple_validators() {
-        let value = String::from("test");
-        let validators: &[&dyn Validator<String>] = &[
-            &StringIsEmpty,
-            &ControlCharacters,
-            &PrecedingWhitespace
-        ];
+    fn error_display_format() {
+        let error = Error::Invalid(String::from("field is invalid"));
+        let formatted = format!("{error}");
 
-        assert_ok!(validate(&value, "field", validators));
+        assert_eq!(formatted, "Validation Error: field is invalid");
+    }
+
+    // validate function - single validator
+
+    #[test]
+    fn validate_single_validator_valid() {
+        let value = 42;
+        let validators: &[&dyn Validator<i32>] = &[&IsPositive];
+
+        assert_ok!(validate(&value, "number", validators));
     }
 
     #[test]
-    fn success_with_vec() {
-        let value = vec![1, 2, 3];
-        let validators: &[&dyn Validator<Vec<i32>>] = &[&VecIsEmpty];
-
-        assert_ok!(validate(&value, "items", validators));
-    }
-
-    // Failure Cases
-
-    #[test]
-    fn failure_with_single_validator() {
-        let value = String::new();
-        let validators: &[&dyn Validator<String>] = &[&StringIsEmpty];
+    fn validate_single_validator_invalid() {
+        let value = -5;
+        let validators: &[&dyn Validator<i32>] = &[&IsPositive];
 
         assert_eq!(
-            Error::invalid("username: empty"),
-            validate(&value, "username", validators).unwrap_err(),
+            validate(&value, "number", validators),
+            Err(Error::Invalid(String::from("number: not positive")))
         );
     }
 
     #[test]
-    fn failure_first_validator_fails() {
-        let value = String::from(" test");
-        let validators: &[&dyn Validator<String>] = &[&PrecedingWhitespace, &StringIsEmpty];
+    fn validate_no_validators() {
+        let value = 42;
+        let validators: &[&dyn Validator<i32>] = &[];
+
+        assert_ok!(validate(&value, "number", validators));
+    }
+
+    // validate function - multiple validators
+
+    #[test]
+    fn validate_multiple_validators_all_valid() {
+        let value = 42;
+        let validators: &[&dyn Validator<i32>] = &[&IsPositive, &IsEven, &LessThan100];
+
+        assert_ok!(validate(&value, "number", validators));
+    }
+
+    #[test]
+    fn validate_multiple_validators_first_fails() {
+        let value = -2;
+        let validators: &[&dyn Validator<i32>] = &[&IsPositive, &IsEven, &LessThan100];
 
         assert_eq!(
-            Error::invalid("name: preceding whitespace"),
-            validate(&value, "name", validators).unwrap_err(),
+            validate(&value, "number", validators),
+            Err(Error::Invalid(String::from("number: not positive")))
         );
     }
 
     #[test]
-    fn failure_second_validator_fails() {
-        let value = String::from("test\n");
-        let validators: &[&dyn Validator<String>] = &[&StringIsEmpty, &ControlCharacters];
+    fn validate_multiple_validators_second_fails() {
+        let value = 43;
+        let validators: &[&dyn Validator<i32>] = &[&IsPositive, &IsEven, &LessThan100];
 
         assert_eq!(
-            Error::invalid("description: control characters"),
-            validate(&value, "description", validators).unwrap_err(),
+            validate(&value, "number", validators),
+            Err(Error::Invalid(String::from("number: not even")))
         );
     }
 
     #[test]
-    fn failure_with_vec() {
-        let value: Vec<i32> = Vec::new();
-        let validators: &[&dyn Validator<Vec<i32>>] = &[&VecIsEmpty];
+    fn validate_multiple_validators_third_fails() {
+        let value = 102;
+        let validators: &[&dyn Validator<i32>] = &[&IsPositive, &IsEven, &LessThan100];
 
         assert_eq!(
-            Error::invalid("tags: empty"),
-            validate(&value, "tags", validators).unwrap_err(),
-        );
-    }
-
-    // Error Message Formatting
-
-    #[test]
-    fn error_message_format_with_str_name() {
-        let value = String::new();
-        let validators: &[&dyn Validator<String>] = &[&StringIsEmpty];
-
-        assert_eq!(
-            Error::invalid("email: empty"),
-            validate(&value, "email", validators).unwrap_err(),
+            validate(&value, "number", validators),
+            Err(Error::Invalid(String::from("number: not less than 100")))
         );
     }
 
     #[test]
-    fn error_message_format_with_string_name() {
-        let value = String::new();
-        let validators: &[&dyn Validator<String>] = &[&StringIsEmpty];
+    fn validate_short_circuit_behavior() {
+        let value = -101;
+        let validators: &[&dyn Validator<i32>] = &[&IsPositive, &IsEven, &LessThan100];
 
         assert_eq!(
-            Error::invalid("user_email: empty"),
-            validate(&value, "user_email", validators).unwrap_err(),
+            validate(&value, "number", validators),
+            Err(Error::Invalid(String::from("number: not positive")))
+        );
+    }
+
+    // validate function - string validators
+
+    #[test]
+    fn validate_string_valid() {
+        let value = String::from("hello");
+        let validators: &[&dyn Validator<String>] = &[&MinLength(3), &MaxLength(10)];
+
+        assert_ok!(validate(&value, "text", validators));
+    }
+
+    #[test]
+    fn validate_string_too_short() {
+        let value = String::from("hi");
+        let validators: &[&dyn Validator<String>] = &[&MinLength(3), &MaxLength(10)];
+
+        assert_eq!(
+            validate(&value, "text", validators),
+            Err(Error::Invalid(String::from("text: too short")))
         );
     }
 
     #[test]
-    fn error_message_with_complex_name() {
-        let value = String::new();
-        let validators: &[&dyn Validator<String>] = &[&StringIsEmpty];
+    fn validate_string_too_long() {
+        let value = String::from("hello world!");
+        let validators: &[&dyn Validator<String>] = &[&MinLength(3), &MaxLength(10)];
 
         assert_eq!(
-            Error::invalid("user.profile.name: empty"),
-            validate(&value, "user.profile.name", validators).unwrap_err(),
+            validate(&value, "text", validators),
+            Err(Error::Invalid(String::from("text: too long")))
         );
     }
 
-    // Short-Circuit Behavior
+    // validate function - different name types
 
     #[test]
-    fn short_circuits_on_first_failure() {
-        let value = String::from("\n");
-        let validators: &[&dyn Validator<String>] = &[&ControlCharacters, &StringIsEmpty];
+    fn validate_with_string_name() {
+        let value = -5;
+        let validators: &[&dyn Validator<i32>] = &[&IsPositive];
 
         assert_eq!(
-            Error::invalid("field: control characters"),
-            validate(&value, "field", validators).unwrap_err(),
+            validate(&value, String::from("my_field"), validators),
+            Err(Error::Invalid(String::from("my_field: not positive")))
         );
     }
 
     #[test]
-    #[rustfmt::skip]
-    fn short_circuits_on_first_failure_with_multiple_potential_failures() {
-        let value = String::from(" test\n");
-        let validators: &[&dyn Validator<String>] = &[
-            &PrecedingWhitespace,
-            &ControlCharacters,
-            &StringIsEmpty,
-        ];
+    fn validate_with_formatted_name() {
+        let value = -5;
+        let field_name = "field";
+        let index = 3;
+        let validators: &[&dyn Validator<i32>] = &[&IsPositive];
 
         assert_eq!(
-            Error::invalid("input: preceding whitespace"),
-            validate(&value, "input", validators).unwrap_err(),
+            validate(&value, format!("{field_name}[{index}]"), validators),
+            Err(Error::Invalid(String::from("field[3]: not positive")))
         );
     }
 }
